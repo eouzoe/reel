@@ -1,0 +1,12 @@
+name        = "fs"
+class       = "A"
+scope       = "fs:*"
+version     = "0.1.0"
+reel-target = "v0.1"
+
+[capabilities]
+ops = ["put", "remove"]
+
+[conformance]
+last-tested = "2026-05-22"
+level       = 1

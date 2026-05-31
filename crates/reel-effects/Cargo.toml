@@ -1,0 +1,25 @@
+[package]
+name          = "reel-effects"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+readme        = "README.md"
+keywords      = ["protocol", "agent", "effects"]
+categories    = ["data-structures"]
+description   = "Effect class traits and Capability narrowing for the reel protocol."
+
+[dependencies]
+reel-spec           = { workspace = true }
+reel-effects-macros = { workspace = true }
+serde_json          = { workspace = true }
+
+[features]
+# Walking-skeleton fake adapter.  Throwaway; replaced by real
+# adapters in +.
+walking-skeleton = []
+
+[lints]
+workspace = true

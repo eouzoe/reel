@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/view.schema.json",
+  "title": "View",
+  "description": "Workspace closure per spec.md §5.6 + ADR-0025. Effect Buffer = Block (effects_hash is content-addressed).",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ViewId (UUIDv7)."
+    },
+    "namespace": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "hash.schema.json"
+      },
+      "description": "Map<Name, Hash> visible from inside the View."
+    },
+    "delta": {
+      "$ref": "delta.schema.json",
+      "description": "Pending mutations to the namespace."
+    },
+    "caps": {
+      "type": "array",
+      "items": { "$ref": "capability.schema.json" },
+      "description": "The View's authority set."
+    },
+    "effects_hash": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "hash.schema.json" }
+      ],
+      "description": "Hash of the pending-effects Block (Class B + C effects), or null. THIS is reel's distinctive structural commitment — pending effects are content-addressed."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "committed", "aborted"],
+      "description": "View lifecycle state. `active` is the only non-terminal state (per spec.md §5.6.1)."
+    },
+    "parent": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "format": "uuid" }
+      ],
+      "description": "Parent ViewId. null for root View."
+    }
+  },
+  "required": ["id", "namespace", "delta", "caps", "status"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025). Replaces pre-ADR-0024 schema that used boolean `aborted` + buffer counts.",
+  "x-reel-spec-version": "2026-Q3"
+}

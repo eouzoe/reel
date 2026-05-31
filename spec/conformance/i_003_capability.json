@@ -1,0 +1,61 @@
+{
+  "$schema": "../schema/2026-Q3/conformance-vector.schema.json",
+  "id": "t_007_i003_capability_narrowing",
+  "invariant": "I-003",
+  "description": "Derived Capabilities are sub-lattices of their delegator. Amplification attempts (broader prefix, larger op_set, longer TTL) MUST be rejected with E-009.",
+  "setup": [
+    { "verb": "init" },
+    { "verb": "kernel_root_capability", "out_var": "root" }
+  ],
+  "actions": [
+    {
+      "label": "narrow_path_prefix_ok",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "path_prefix": "fs:/home/user/project" },
+      "expect_ok": true
+    },
+    {
+      "label": "amplify_path_prefix_rejected",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "path_prefix": "fs:/" },
+      "expect_error": "E-009"
+    },
+    {
+      "label": "narrow_op_set_ok",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "op_set": ["read"] },
+      "expect_ok": true
+    },
+    {
+      "label": "amplify_op_set_rejected",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "op_set": ["read", "write", "delete", "fire_b", "fire_c", "admin"] },
+      "expect_error": "E-009"
+    },
+    {
+      "label": "shrink_ttl_ok",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "ttl": 3600 },
+      "expect_ok": true
+    },
+    {
+      "label": "extend_ttl_rejected",
+      "verb": "capability_narrow",
+      "from_var": "root",
+      "args": { "ttl": 999999999 },
+      "expect_error": "E-009"
+    }
+  ],
+  "expected": {
+    "narrowing_attempts": 6,
+    "narrowing_successes": 3,
+    "narrowing_rejections": 3,
+    "all_rejections_are_E_009": true
+  },
+  "x-reel-status": "v0.1 sketch — assumes the kernel exposes a `kernel_root_capability` test hook. The hook is permitted in the conformance harness but MUST NOT be in the production CLI surface."
+}

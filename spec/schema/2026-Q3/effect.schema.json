@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/effect.schema.json",
+  "title": "Effect",
+  "description": "Effect descriptor — payload of a Block whose role is to describe a side effect. Per spec.md §5.7. Effect is a CLASSIFICATION over Block payloads, not a separate core type.",
+  "oneOf": [
+    {
+      "title": "Class A — pure local",
+      "type": "object",
+      "description": "Operates on the View's Delta layer. Reversed by Delta discard at abort. Does NOT enter View.effects_hash.",
+      "properties": {
+        "class": { "const": "A" },
+        "effect_id": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Unique within the owning View."
+        },
+        "op": {
+          "type": "object",
+          "description": "Adapter-defined operation descriptor.",
+          "additionalProperties": true
+        }
+      },
+      "required": ["class", "effect_id", "op"],
+      "additionalProperties": false
+    },
+    {
+      "title": "Class B — idempotent remote",
+      "type": "object",
+      "description": "Carries a version reference for commit-time precondition check. Idempotent under the version_ref: same ref ⇒ same observable consequence.",
+      "properties": {
+        "class": { "const": "B" },
+        "effect_id": { "type": "integer", "minimum": 0 },
+        "version_ref": {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "enum": ["etag", "commit_sha", "object_version_id", "opaque"] },
+            "value": { "type": "string", "minLength": 1 }
+          },
+          "required": ["kind", "value"],
+          "additionalProperties": false,
+          "description": "Version reference to assert at commit time. Mismatch ⇒ E-002 CommitConflict."
+        },
+        "op": {
+          "type": "object",
+          "description": "Adapter-defined operation descriptor (resource scope + parameters).",
+          "additionalProperties": true
+        },
+        "compensable_cost": {
+          "type": "object",
+          "description": "Optional adapter-layer refinement (per Atomix arXiv 2602.14849 reversible-with-cost). Not part of protocol surface.",
+          "additionalProperties": true
+        }
+      },
+      "required": ["class", "effect_id", "version_ref", "op"],
+      "additionalProperties": false
+    },
+    {
+      "title": "Class C — irreversible remote",
+      "type": "object",
+      "description": "Cannot be undone by reel. Buffered in View.effects_hash; fires at commit after all Class B effects (ADR-0015).",
+      "properties": {
+        "class": { "const": "C" },
+        "effect_id": { "type": "integer", "minimum": 0 },
+        "op": {
+          "type": "object",
+          "description": "Adapter-defined operation descriptor. The commit UI MUST display this to the user before firing (per §8.3).",
+          "additionalProperties": true
+        }
+      },
+      "required": ["class", "effect_id", "op"],
+      "additionalProperties": false
+    }
+  ],
+  "x-reel-status": "v0.1 canonical (per ADR-0025). Note: idempotency_key field renamed to version_ref to reflect ADR-0024 + ADR-0025 semantics (precondition check, not uniqueness).",
+  "x-reel-spec-version": "2026-Q3"
+}

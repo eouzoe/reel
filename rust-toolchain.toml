@@ -1,0 +1,26 @@
+# reel Rust toolchain pin.
+#
+# Per 00-foundation §4 + reel-tooling-decisions.md §A.
+# Pinned 1.95.0 stable — released 2026-04-16.
+#
+# Why stable not nightly: ADR-0025 + the requirements keep
+# formal-verification (Verus / Miri / Cranelift) as advisory R&D,
+# NOT MVP gate. nightly only invoked per-tool when a specific
+# tool requires it (e.g. cargo-mutants --fail-fast on nightly).
+
+[toolchain]
+channel    = "1.95.0"
+components = [
+    "rustfmt",
+    "clippy",
+    "rust-src",
+    "llvm-tools-preview",
+    "rust-analyzer",
+]
+profile    = "minimal"
+targets    = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]

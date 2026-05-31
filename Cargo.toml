@@ -1,0 +1,195 @@
+# reel workspace manifest.
+#
+# Per 00-foundation §3 + lint-tiers convention + ADR-0025 ontology.
+# 7 crates: reel-spec / reel-core / reel-effects / reel-store /
+# reel-cli.
+#
+# Inheritance: every member crate MUST set `[lints] workspace = true`
+# (enforced by `clippy::missing_lints_inheritance`). Tier S kernel
+# crates additionally tighten in their own lib.rs.
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/reel-spec",
+    "crates/reel-core",
+    "crates/reel-effects",
+    "crates/reel-effects-macros",
+    "crates/reel-store",
+    "crates/reel-cli",
+    # Adapters live under crates/adapters/*.
+    # Members added as adapters land.
+    "crates/adapters/fs",
+    "crates/adapters/slack",
+]
+
+[workspace.package]
+version       = "0.1.0"
+edition       = "2024"
+rust-version  = "1.95"
+license       = "Apache-2.0"
+authors       = ["曜日 <eouzoe.me>"]
+repository    = "https://github.com/eouzoe/reel"
+documentation = "https://docs.rs/reel-core"
+homepage      = "https://github.com/eouzoe/reel"
+readme        = "README.md"
+description   = "A protocol for AI agent workspace state & effect management."
+
+# ──────────────────────────────────────────────────────────────────────────
+# Workspace lints (lint-tiers.md §"Workspace baseline" verbatim).
+# Tier S kernel crates further tighten via lib.rs #![deny(...)] addenda.
+# ──────────────────────────────────────────────────────────────────────────
+
+[workspace.lints.rust]
+unsafe_code                   = "forbid"
+missing_docs                  = "deny"
+missing_debug_implementations = "warn"
+unreachable_pub               = "warn"
+unused_must_use               = "deny"
+unused_crate_dependencies     = "warn"
+trivial_numeric_casts         = "warn"
+unused_lifetimes              = "warn"
+# Lint groups MUST carry `priority = -1` so individual member lints
+# (defaulting to priority 0) can override them; without this Cargo
+# rejects the manifest (clippy lint_groups_priority, on by default
+# from Rust 1.84+).
+nonstandard_style             = { level = "deny", priority = -1 }
+future_incompatible           = { level = "deny", priority = -1 }
+rust_2024_compatibility       = { level = "deny", priority = -1 }
+let_underscore_drop           = "warn"
+single_use_lifetimes          = "warn"
+unsafe_op_in_unsafe_fn        = "deny"
+
+[workspace.lints.clippy]
+pedantic                      = { level = "warn", priority = -1 }
+nursery                       = { level = "warn", priority = -1 }
+cargo                         = { level = "warn", priority = -1 }
+# Cherry-picked restriction lints (Clippy README forbids whole-group enable).
+unwrap_used                   = "deny"
+expect_used                   = "warn"      # Tier S upgrades to deny in lib.rs
+panic                         = "warn"
+todo                          = "deny"
+unimplemented                 = "deny"
+unreachable                   = "deny"
+indexing_slicing              = "warn"
+arithmetic_side_effects       = "warn"
+float_arithmetic              = "warn"
+dbg_macro                     = "deny"
+print_stdout                  = "deny"
+print_stderr                  = "deny"
+mem_forget                    = "deny"
+let_underscore_must_use       = "deny"
+wildcard_enum_match_arm       = "deny"
+missing_assert_message        = "warn"
+shadow_unrelated              = "warn"
+str_to_string                 = "warn"
+string_to_string              = "warn"
+verbose_file_reads            = "warn"
+self_named_module_files       = "warn"   # forbid mod.rs (bose-style §17)
+unneeded_field_pattern        = "warn"
+multiple_inherent_impl        = "warn"
+same_name_method              = "warn"
+filetype_is_file              = "deny"
+allow_attributes_without_reason = "warn"
+absolute_paths                = "warn"
+blanket_clippy_restriction_lints = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links        = "deny"
+private_intra_doc_links       = "warn"
+missing_crate_level_docs      = "warn"
+invalid_codeblock_attributes  = "warn"
+bare_urls                     = "warn"
+
+[workspace.lints.cargo]
+multiple_crate_versions       = "allow"   # workspace inherent
+negative_feature_names        = "deny"
+redundant_feature_names       = "warn"
+wildcard_dependencies         = "deny"
+
+# ──────────────────────────────────────────────────────────────────────────
+# Pinned dependencies (members use `{ workspace = true }`).
+# ──────────────────────────────────────────────────────────────────────────
+
+[workspace.dependencies]
+# Core
+blake3        = "1"
+bytes         = "1"
+thiserror     = "2"
+serde         = { version = "1", features = ["derive"] }
+serde_json    = "1"
+ciborium      = "0.2"
+uuid          = { version = "1", features = ["v7", "serde"] }
+chrono        = { version = "0.4", features = ["serde"] }
+tracing       = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Persistent / CoW namespace (ADR-0034)
+imbl          = { version = "7", features = ["serde"] }
+smol_str      = { version = "0.3", features = ["serde"] }
+
+# Storage
+redb          = "4"
+moka          = { version = "0.12", features = ["future"] }
+
+# Async runtime (for adapters fire())
+tokio         = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "io-util"] }
+async-trait   = "0.1"
+
+pyo3          = { version = "0.22", default-features = false }
+
+# CLI
+clap          = { version = "4", features = ["derive"] }
+colored       = "2"
+walkdir       = "2"
+
+# Slack adapter
+slack-morphism = { version = "2", features = ["hyper"] }
+
+# Dev / test
+proptest      = "1"
+bolero        = "0.13"
+divan         = "0.1"
+insta         = { version = "1", features = ["yaml", "json"] }
+tracing-test  = "0.2"
+
+# Internal workspace deps (path-only; version-tracked via workspace.package)
+reel-spec               = { path = "crates/reel-spec" }
+reel-core               = { path = "crates/reel-core" }
+reel-effects            = { path = "crates/reel-effects" }
+reel-effects-macros     = { path = "crates/reel-effects-macros" }
+reel-store              = { path = "crates/reel-store" }
+
+# ──────────────────────────────────────────────────────────────────────────
+# Profiles
+# ──────────────────────────────────────────────────────────────────────────
+
+[profile.dev]
+opt-level       = 1
+debug           = true
+overflow-checks = true
+
+[profile.release]
+opt-level       = 3
+lto             = "thin"
+codegen-units   = 1
+overflow-checks = true       # safety > performance
+panic           = "abort"
+strip           = false      # keep symbols for profiling
+debug           = "line-tables-only"
+
+[profile.fuzz]
+inherits        = "dev"
+opt-level       = 3
+incremental     = false
+codegen-units   = 1
+# NOTE: LTO is NOT supported in this profile (per Bolero Book).
+
+[profile.bench]
+inherits        = "release"
+debug           = true             # for flamegraphs / samply
+
+[profile.profiling]
+inherits        = "release"
+debug           = true
+strip           = "none"

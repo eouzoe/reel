@@ -1,0 +1,33 @@
+[package]
+name          = "reel-core"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+readme        = "README.md"
+keywords      = ["protocol", "agent", "workspace"]
+categories    = ["data-structures"]
+description   = "reel kernel — `fork` / `commit` / `abort` over the reel-spec types."
+
+[dependencies]
+reel-spec    = { workspace = true }
+reel-effects = { workspace = true }
+reel-store   = { workspace = true }
+# Walking-skeleton-only — guarded by Cargo feature.  Real production paths
+# will pull these in unconditionally.
+ciborium     = { workspace = true, optional = true }
+serde_json   = { workspace = true, optional = true }
+
+[dev-dependencies]
+blake3 = { workspace = true }
+proptest = { workspace = true }
+
+[features]
+# Walking-skeleton scaffolding.  When enabled, exposes a
+# `pub(crate)` helper that lets the example crate observe pending effects.
+walking-skeleton = ["reel-effects/walking-skeleton", "dep:ciborium", "dep:serde_json"]
+
+[lints]
+workspace = true

@@ -1,0 +1,213 @@
+# reel invariants manifest — v0.1
+#
+# Canonical ontology per ADR-0025 (2026-05-15):
+#   THREE core invariants (I-001 / I-002 / I-003) — exhaustive.
+#   FOUR derived properties (D-1..D-4) — structural consequences of
+#     the 6 core types + 3 verbs; documented in spec/spec.md §7.2,
+#     not numbered here because they are not independent claims.
+#   TWO convenience bounds (perf + depth) — engineering limits.
+#
+# Supersedes ADR-0024's "I-002 + phi-1/2/4/5" framing. The phi-*
+# properties are now derived; their content is preserved in
+# spec/spec.md §7.2 derived-properties section.
+---
+
+schema-version: v0.1
+
+invariants:
+  - id: I-001
+    tier: core
+    intent: |
+      A Block is reachable iff it is reachable through the transitive
+      closure of Ref→Block (namespace) and Block→Block (parent hash)
+      edges starting from the current root namespace. No code path
+      grants access to a Block solely on knowing its Hash.
+    rationale: |
+      Without I-001, "I know a hash" implies "I can resurrect the
+      Block" — an attack surface and a GC-impossibility. Inherited
+      from Git (reachability defines preservation) and IPFS
+      (content-addressing without ambient discoverability).
+    formal-statement: |
+      structural — encoded by the protocol's API surface (no
+      reachability-bypassing primitives). Not modelled in
+      spec/formal/reel.qnt v0.1 because reel.qnt is a 6-type-elided
+      minimum-abstraction model focused on I-002.
+    witness: |
+      Impl-level: crates/reel-core/tests/reachability.rs covers
+      the "lookup_by_hash without ref" case — must return
+      E-010 (ReachabilityViolation).
+    anti-witness: |
+      Impl-level mutation: bypass reachability check in lookup.
+      Test must then permit "ghost Block resurrection" path.
+    on-removal: |
+      Storage GC becomes undecidable. An attacker who has previously
+      observed a Block hash can reach the Block after it has been
+      removed from all namespaces.
+    schema-version-added: v0.1
+    enforced-by:
+      - crates/reel-core/src/store.rs (lookup gates on reachability)
+      - crates/reel-core/src/gc.rs (reachability-only retention)
+    refinement-mapping: |
+      Quint: not modelled. Rust: Verus precondition on lookup
+      requires a witness of the namespace-reachability path
+      (post-MVP, advisory).
+    test-vectors: spec/conformance/i_001_reachability.json
+
+  - id: I-002
+    tier: core
+    intent: |
+      Let v be a View. Let e be a Class C effect buffered in
+      v.effects_hash. If abort(v) is invoked, then e.fire MUST NOT
+      have been invoked at any point in v's lifetime, and MUST NOT
+      be invoked thereafter.
+
+      Scope (ADR-0032): the buffered set depends on v.boundary. For an
+      Autonomous View it is v's own buffer; for a View with committed
+      Isolated descendants it is v's buffer plus the descendants'
+      effects that merged up into it. abort(v) drops v.effects_hash,
+      rendering the whole Isolated-subtree buffer unreachable (I-001)
+      in one operation. v0.1 formal proof covers the single-View case
+      only (ADR-0030); the Isolated-subtree extension is deferred.
+    rationale: |
+      reel's reason to exist. The protocol provides a speculation
+      boundary; the boundary is meaningful only if discarding a
+      decision actually prevents the side-effect from happening. Any
+      breach turns reel into a buffered effect runtime with no
+      stronger guarantee than a bare retry layer.
+    formal-statement: spec/formal/reel.qnt#inv_i002
+    witness: spec/formal/reel.qnt#i002_witness
+    anti-witness: spec/formal/mutants/i_002_no_clear.qnt
+    host-observable-witness: |
+      Per spec/spec.md §5.6 (G-05 calibration closure): conformant
+      implementations MUST expose `View.effects_hash` read-only on
+      the public View surface. The `Some(h) → None` transition
+      observed across `abort` is the structural witness that no
+      commit-drain path can reach the buffered effect thereafter.
+    on-removal: |
+      Aborts no longer prevent leakage. An agent that aborts a
+      speculative branch cannot trust that the Slack message,
+      GitHub issue, or payment buffered in that branch was not
+      sent. Speculative exploration becomes routinely consequential.
+    schema-version-added: v0.1
+    enforced-by:
+      - spec/formal/reel.qnt (advisory)
+      - crates/reel-core/src/kernel.rs (production abort path)
+      - crates/reel-core/src/skeleton.rs (walking-skeleton abort + commit)
+      - crates/reel-py/src/lib.rs (PyView.effects_hash exposes the witness to Python)
+    refinement-mapping: |
+      Quint action `abort` ↔ Rust Kernel::abort. The Quint action
+      clears effects_hash atomically with the status transition;
+      the Rust impl drops the effects-block reference (the block
+      becomes unreachable per I-001 and is collected).
+    test-vectors: spec/conformance/i_002_cases.json
+
+  - id: I-003
+    tier: core
+    intent: |
+      For any delegation chain of Capability values: each delegate's
+      authority is a sub-lattice of its delegator's authority.
+      Capabilities only attenuate (sub-set op_set, sub-prefix
+      path_prefix, less-or-equal TTL); amplification is forbidden.
+    rationale: |
+      Required for compositional security reasoning. Inherited from
+      Miller-Yee-Shapiro 2003 (object-capability model) and APS IETF
+      draft (monotone-narrowing lattice across 7 dimensions). Without
+      I-003, sub-Views can amplify authority beyond what their
+      parent had — breaks any reasoning about least-authority
+      compartmentalisation.
+    formal-statement: |
+      structural — encoded in the type signature of
+      Capability-derivation operations (only narrowing constructors).
+      Not modelled in spec/formal/reel.qnt v0.1 because reel.qnt is
+      a minimum-abstraction model focused on I-002.
+    enforcement-layer: |
+      Per spec/spec.md §7.1 (G-04 calibration closure): I-003 is
+      enforced at fork-time by the structural typing of the
+      Capability-derivation primitive (fork / fork_from); no
+      amplification operation exists in the protocol surface.
+      Runtime authority enforcement of individual submit / write
+      sites against the active capability set is the host adapter's
+      responsibility, not the protocol's. A host MAY install such a
+      check; the protocol does not require it.
+    witness: |
+      Impl-level: crates/reel-effects/tests/capability_narrow.rs
+      verifies attenuation produces a strict sub-Capability.
+    anti-witness: |
+      Impl-level mutation: allow op_set superset in derive().
+      Test must then permit an amplification path.
+    on-removal: |
+      A View can construct a Capability granting access beyond its
+      parent's authority — defeats compartmentalisation. POLA
+      (principle of least authority) violated by structural design.
+    schema-version-added: v0.1
+    enforced-by:
+      - crates/reel-effects/src/capability.rs (only narrowing
+        constructors are pub; amplification path absent)
+      - crates/reel-core/src/skeleton.rs (fork / fork_from refuse
+        widening caps and return E-009)
+    refinement-mapping: |
+      Quint: not modelled. Rust: Verus precondition on
+      Capability::derive requires the derivative be a sub-lattice.
+    test-vectors: spec/conformance/i_003_capability.json
+
+# ───────────────────────────────────────────────────────────────────
+# Derived properties (structural; not separate axioms)
+#
+# These are documented in spec/spec.md §7.2 as consequences of the
+# 6 core types + 3 verbs design. They were numbered Φ₁ / Φ₂ / Φ₄ /
+# Φ₅ in ADR-0024 and are now demoted to derived.
+#
+# Listed here so cross-reference lints can verify spec.md refers to
+# the same set; they carry minimal metadata.
+# ───────────────────────────────────────────────────────────────────
+
+derived:
+  - id: D-1
+    name: Class immutability
+    consequence-of: Block immutability + Effect = Block-payload classification
+
+  - id: D-2
+    name: Class B+C exit only via commit
+    consequence-of: |
+      verb enumeration — only `commit` has a transition that moves
+      effects_hash to the committed log; `submit_*` only buffers;
+      `abort` only drops.
+
+  - id: D-3
+    name: Atomicity of commit and abort
+    consequence-of: |
+      single-threaded kernel at v0.1 (ADR-0008); commit/abort are
+      one critical section. v0.2+ multi-threaded requires extra
+      proof.
+
+  - id: D-4
+    name: Sibling isolation
+    consequence-of: |
+      View is a record (value semantics); two View records are
+      independent. Mutation of one does not mutate another.
+
+# ───────────────────────────────────────────────────────────────────
+# Convenience bounds (engineering limits; not protocol invariants)
+# ───────────────────────────────────────────────────────────────────
+
+convenience:
+  - id: I-003-perf
+    title: fork is O(1)
+    intent: |
+      `fork` completes in time independent of parent payload size.
+      Achieved by reference-counted Block inheritance (COW).
+    formal-statement: |
+      Performance commitment; not a state-machine predicate.
+      Verified by benchmark.
+    enforced-by:
+      - crates/reel-core/src/fork.rs (refcount-bump impl)
+      - crates/reel-core/benches/fork.rs (criterion benchmark)
+
+  - id: I-008
+    title: Nested fork depth bounded
+    intent: |
+      `View.depth ≤ MAX_FORK_DEPTH` (default 64). Stack-overflow
+      protection.
+    enforced-by:
+      - crates/reel-core/src/fork.rs (depth check)
+      - crates/reel-core/tests/depth_bound.rs

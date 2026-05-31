@@ -1,0 +1,44 @@
+# reel-spec — protocol types crate.
+#
+# Dependency-free except blake3, bytes, chrono, serde, serde_json,
+# thiserror, and uuid.  Every downstream crate (reel-core, reel-effects,
+# reel-store, reel-cli, adapters) imports from here.
+#
+# Per ADR-0025 (six-types-three-verbs-three-invariants, 2026-05-15).
+
+[package]
+name          = "reel-spec"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+documentation = "https://docs.rs/reel-spec"
+homepage      = { workspace = true }
+readme        = "README.md"
+description   = "Protocol-type definitions for reel: Hash, Block, Ref, Delta, Capability, View."
+keywords      = ["protocol", "agent", "workspace", "effects", "capability"]
+categories    = ["data-structures"]
+
+[package.metadata.docs.rs]
+all-features   = true
+rustdoc-args   = ["--cfg", "docsrs"]
+
+[dependencies]
+blake3       = { workspace = true }
+bytes        = { workspace = true, features = ["serde"] }
+chrono       = { workspace = true }
+imbl         = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+smol_str     = { workspace = true }
+thiserror    = { workspace = true }
+uuid         = { workspace = true }
+
+[dev-dependencies]
+ciborium     = { workspace = true }
+proptest     = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/ref.schema.json",
+  "title": "Ref",
+  "description": "Mutable named pointer { name, hash, version_constraint? } per spec.md §5.3 + ADR-0025.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "description": "Stable UTF-8 identifier. Path syntax per reel namespace rules."
+    },
+    "hash": {
+      "$ref": "hash.schema.json",
+      "description": "Block currently referenced."
+    },
+    "version_constraint": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "enum": ["etag", "commit_sha", "object_version_id", "opaque"] },
+            "value": { "type": "string", "minLength": 1 }
+          },
+          "required": ["kind", "value"],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Optional precondition for Class B commit gating (§5.7.2). null if Ref has no remote version semantics."
+    }
+  },
+  "required": ["name", "hash"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025). Replaces pre-ADR-0024 schema that had {id: UUIDv7, block_id, timestamp} — ADR-0025 makes `name` the identity.",
+  "x-reel-spec-version": "2026-Q3"
+}

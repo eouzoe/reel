@@ -1,0 +1,25 @@
+[package]
+name          = "adapter-fs"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+readme        = "README.md"
+keywords      = ["protocol", "agent", "filesystem", "adapter", "effects"]
+categories    = ["filesystem", "data-structures"]
+description   = "Class A filesystem adapter for the reel protocol."
+
+[dependencies]
+reel-spec    = { workspace = true }
+reel-effects = { workspace = true }
+blake3       = { workspace = true }
+thiserror    = { workspace = true }
+serde        = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

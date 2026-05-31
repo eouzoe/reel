@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/2026-Q3/conformance-vector.schema.json",
+  "id": "t_005_i001_reachability",
+  "invariant": "I-001",
+  "description": "Knowing a Block's Hash does NOT grant access to it. An implementation that permits hash-by-hash lookup after the Block has become unreachable is non-conformant.",
+  "setup": [
+    { "verb": "init" },
+    { "verb": "put_block", "data_base64": "aGVsbG8=", "out_var": "h" },
+    { "verb": "create_ref", "name": "/probe", "hash_var": "h" }
+  ],
+  "actions": [
+    { "verb": "remove_ref", "name": "/probe" },
+    { "verb": "gc_run" },
+    { "verb": "lookup_by_hash", "hash_var": "h", "expect_error": "E-010" }
+  ],
+  "expected": {
+    "errors": ["E-010"],
+    "external_observations": []
+  },
+  "x-reel-status": "v0.1 sketch — full vector to be authored (Store with reachability gate)."
+}

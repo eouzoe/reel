@@ -1,0 +1,23 @@
+[package]
+name          = "reel-effects-macros"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+readme        = "README.md"
+keywords      = ["protocol", "agent", "effects", "macros"]
+categories    = ["development-tools::procedural-macro-helpers"]
+description   = "Procedural macros for the reel-effects sealed effect-class traits."
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn          = { version = "2", features = ["full", "parsing", "extra-traits"] }
+quote        = "1"
+proc-macro2  = "1"
+
+[lints]
+workspace = true

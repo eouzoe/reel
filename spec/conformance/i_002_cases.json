@@ -1,0 +1,31 @@
+{
+  "$schema": "../schema/2026-Q3/conformance-vector.schema.json",
+  "id": "t_006_i002_abort_silences_class_c",
+  "invariant": "I-002",
+  "description": "An aborted View's Class C effect MUST NOT have fired and MUST NOT fire. Verified by mock-server fault injection across 10000 random commit/abort decisions.",
+  "setup": [
+    { "verb": "init" },
+    { "verb": "register_mock_class_c_adapter", "scope": "slack:*", "out_var": "mock" }
+  ],
+  "actions": [
+    {
+      "loop": 10000,
+      "body": [
+        { "verb": "fork", "parent": "root", "out_var": "v" },
+        { "verb": "submit_c", "view_var": "v", "op": { "scope": "slack:#general", "text": "test" } },
+        { "verb": "branch", "random": true, "if_true": [
+            { "verb": "commit", "view_var": "v" }
+          ], "if_false": [
+            { "verb": "abort", "view_var": "v" },
+            { "verb": "assert_mock_never_saw", "mock_var": "mock", "op_match": { "scope": "slack:#general" } }
+          ]
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "external_observations": "exactly the commits, never the aborts",
+    "i002_violations": 0
+  },
+  "x-reel-status": "v0.1 sketch — runner semantics for `loop` + `branch` will be canonicalised in the conformance runner skeleton."
+}

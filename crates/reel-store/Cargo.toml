@@ -1,0 +1,42 @@
+# reel-store — persistent + in-memory Block / Ref storage.
+#
+# Implements the storage layer for the reel kernel.
+# Two backends:
+#   - MemStore   (in-memory, used by walking-skeleton tests and the
+#                 reel-conformance-runner).
+#   - RedbStore  (persistent, redb 4.x B-tree, four-table layout per
+#                 ADR-0017 + ADR-0018).
+#
+# Both backends enforce I-001 Reachability at `lookup_by_hash`:
+# Blocks become inaccessible once they fall out of the namespace's
+# transitive closure (see spec/invariants.yaml#I-001).
+
+[package]
+name          = "reel-store"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+documentation = "https://docs.rs/reel-store"
+homepage      = { workspace = true }
+readme        = "README.md"
+description   = "Persistent and in-memory Block + Ref storage for reel, with I-001 reachability enforcement."
+keywords      = ["protocol", "agent", "storage", "redb", "blake3"]
+categories    = ["database-implementations", "data-structures"]
+
+[dependencies]
+reel-spec  = { workspace = true }
+redb       = { workspace = true }
+moka       = { workspace = true, features = ["sync"] }
+ciborium   = { workspace = true }
+serde      = { workspace = true }
+thiserror  = { workspace = true }
+
+[dev-dependencies]
+proptest   = { workspace = true }
+tempfile   = "3"
+
+[lints]
+workspace = true

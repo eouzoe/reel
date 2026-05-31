@@ -1,0 +1,171 @@
+# reel error catalogue
+#
+# Schema: spec/schema/2026-Q3/errors.schema.json
+# Every entry maps to a `ReelError` variant in
+# `crates/reel-spec/src/lib.rs`; CI verifies the manifest <-> code
+# correspondence.
+#
+# Aligned with ADR-0025 (6-type / 3-verb / 3-invariant ontology).
+# E-004 was removed per ADR-0024 (idempotency = equivalence, not
+# uniqueness); E-008 renamed ViewAborted → ViewTerminal; E-009 and
+# E-010 added for I-003 + I-001 enforcement.
+#
+# G-03 calibration closure (spec/spec.md §9.1): bindings MUST
+# classify by the stable `E-NNN` code, not by parsing the Display
+# string. The reference Rust impl exposes
+# `ReelError::code() -> &'static str` and
+# `ReelError::is_recoverable() -> bool` as first-class accessors;
+# non-Rust bindings MUST surface the same identifier as either a
+# typed exception class (preferred — e.g. `ReelViewTerminal` for
+# E-008) or a structured field on a generic error type. The Python
+# binding under `crates/reel-py` provides the typed-exception
+# surface via PyO3's `create_exception!` macro.
+---
+
+version: 2026-Q3
+
+errors:
+  - id: E-001
+    code: BlockNotFound
+    title: Block not found
+    description: |
+      The Store does not contain a Block matching the requested Hash,
+      OR the Block exists in storage but is not reachable from the
+      current namespace (I-001 enforcement; distinct from E-010 only
+      in the caller's expected reachability).
+    when:
+      - Caller passes a Hash unknown to the Store.
+      - Block has been garbage-collected after becoming unreachable.
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-001
+
+  - id: E-002
+    code: CommitConflict
+    title: Commit conflict
+    description: |
+      The commit cannot proceed because (a) a Class B effect's
+      version_constraint precondition is no longer satisfied at
+      commit time, or (b) the View's delta is inconsistent with the
+      parent Ref due to a sibling commit having modified overlapping
+      state.
+    when:
+      - Class B effect's stored ETag / commit SHA / version ID no
+        longer matches the remote system's current value.
+      - Two View instances forked from the same Ref both attempted
+        commit; the second to validate sees the first's changes and
+        cannot reconcile.
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-002
+
+  - id: E-003
+    code: ClassCAfterAbort
+    title: Class C effect after abort (unreachable)
+    description: |
+      An attempt was made to fire a Class C effect on an aborted
+      View. This error MUST NOT be reachable in a correct
+      implementation; reaching it indicates a breach of I-002 and a
+      critical bug (the kernel's capability-construction enforcement
+      has been bypassed).
+    when:
+      - Type system bypassed (unsafe transmutation, cross-thread
+        capability leak); MUST NOT happen in safe Rust + correct
+        kernel.
+    severity: critical
+    exit_code: 70
+    duvet_anchor: spec/spec.md#e-003
+
+  # E-004 was removed in the 2026-05-15 morning reframe (ADR-0024).
+  # Class B idempotency under stable identifier means equivalent,
+  # not forbidden. The error code is reserved; it MUST NOT be
+  # re-used for a different condition in this schema version.
+
+  - id: E-005
+    code: ForkDepthExceeded
+    title: Nested fork depth exceeded
+    description: |
+      A fork would produce a View with depth > MAX_FORK_DEPTH (per
+      I-008 convenience bound).
+    when:
+      - Caller forks repeatedly without committing or aborting;
+        often indicates an agent loop bug or unbounded recursion.
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-005
+
+  - id: E-006
+    code: EffectDrainTimeout
+    title: Effect drain timeout
+    description: |
+      A Class B or Class C effect's fire() exceeded the configured
+      EFFECT_DRAIN_TIMEOUT (default 60 s).
+    when:
+      - Adapter is slow or hung during commit's drain phase; commit
+        cannot complete in bounded time.
+    severity: critical
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-006
+
+  - id: E-007
+    code: Storage
+    title: Storage error
+    description: |
+      An underlying storage error from the persistence layer.
+      Source error categorises further (Io, Corrupt, Capacity).
+    when:
+      - Disk full, file corruption, IO error.
+    severity: critical
+    exit_code: 3
+    duvet_anchor: spec/spec.md#e-007
+
+  - id: E-008
+    code: ViewTerminal
+    title: Operation on terminal View
+    description: |
+      An operation (fork, submit_*, commit, abort) was attempted on
+      a View whose status is `committed` or `aborted`. Terminal
+      Views MUST NOT accept further verbs.
+    when:
+      - "Caller mishandled the lifecycle: committed or aborted the
+        View, then attempted further operations."
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-008
+
+  - id: E-009
+    code: CapabilityViolation
+    title: Insufficient capability for operation
+    description: |
+      An operation was attempted without sufficient Capability to
+      authorise it. This enforces I-003: every derived Capability
+      MUST be a sub-lattice of its delegator; the kernel rejects any
+      operation outside the active Capability's path_prefix or
+      op_set.
+    when:
+      - Caller attempted an operation outside its delegated
+        Capability scope (e.g., write to a path not in path_prefix,
+        invoke an op not in op_set).
+      - Caller attempted to amplify a derived Capability beyond its
+        delegator's authority (structural reject; should not
+        compile in well-typed clients).
+      - TTL on the Capability has expired.
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-009
+
+  - id: E-010
+    code: ReachabilityViolation
+    title: Block not reachable from current namespace
+    description: |
+      An attempt was made to access a Block via Hash that is not
+      reachable through the transitive closure of Ref→Block and
+      Block→Block edges starting from the current root namespace.
+      This enforces I-001 (Reachability).
+    when:
+      - Caller has a Hash but no namespace path that reaches the
+        Block (e.g., the Hash was learned via side-channel, log
+        traversal, or stale snapshot).
+    severity: recoverable
+    exit_code: 2
+    duvet_anchor: spec/spec.md#e-010

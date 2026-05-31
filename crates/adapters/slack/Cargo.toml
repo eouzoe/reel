@@ -1,0 +1,25 @@
+[package]
+name          = "adapter-slack"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+authors       = { workspace = true }
+repository    = { workspace = true }
+readme        = "README.md"
+keywords      = ["protocol", "agent", "slack", "adapter", "effects"]
+categories    = ["api-bindings", "asynchronous"]
+description   = "Class C Slack messaging adapter for the reel protocol."
+
+[dependencies]
+reel-spec   = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+async-trait = { workspace = true }
+thiserror   = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }
+
+[lints]
+workspace = true

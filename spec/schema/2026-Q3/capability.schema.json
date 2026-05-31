@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/capability.schema.json",
+  "title": "Capability",
+  "description": "Scoped attenuating authority per spec.md §5.5 + I-003 narrowing invariant.",
+  "type": "object",
+  "properties": {
+    "path_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Namespace prefix this Capability covers. Sub-Capabilities MUST have a more specific prefix or the same prefix."
+    },
+    "op_set": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["read", "write", "delete", "fire_b", "fire_c"]
+      },
+      "description": "Operations permitted by this Capability. Sub-Capabilities MUST have a strict subset."
+    },
+    "ttl": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Time-to-live in seconds. 0 = unbounded. Sub-Capabilities MUST have ttl ≤ delegator's ttl (per I-003)."
+    }
+  },
+  "required": ["path_prefix", "op_set", "ttl"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025).",
+  "x-reel-spec-version": "2026-Q3"
+}

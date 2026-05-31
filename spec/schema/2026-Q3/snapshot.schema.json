@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/snapshot.schema.json",
+  "title": "Snapshot",
+  "description": "Verifiable reproduction descriptor for a View per spec.md §5.8 + ADR-0025. NOT a complete copy of the world; sufficient to reproduce the View on a compatible kernel.",
+  "type": "object",
+  "properties": {
+    "namespace_config": {
+      "type": "object",
+      "description": "Routing table: which resources are mounted where.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "adapter": { "type": "string", "minLength": 1 },
+          "scope": { "type": "string", "minLength": 1 }
+        },
+        "required": ["adapter", "scope"],
+        "additionalProperties": false
+      }
+    },
+    "delta_layer_bytes": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Class A resources' local COW state."
+    },
+    "effects_hash": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "hash.schema.json" }
+      ],
+      "description": "Pending Class B + C effects buffer hash at snapshot time."
+    },
+    "version_refs": {
+      "type": "object",
+      "description": "Map<Path, VersionRef> of Class B resources' version anchors. At restore: assert each is still valid; on mismatch, raise explicit warning (NOT silent proceed).",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["etag", "commit_sha", "object_version_id", "opaque"] },
+          "value": { "type": "string", "minLength": 1 }
+        },
+        "required": ["kind", "value"],
+        "additionalProperties": false
+      }
+    },
+    "capability_set": {
+      "type": "array",
+      "items": { "$ref": "capability.schema.json" },
+      "description": "The View's authority boundary at snapshot time."
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-Q[1-4]$",
+      "description": "Schema version of this snapshot (e.g., '2026-Q3'). For cross-version validation."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 timestamp at snapshot creation."
+    }
+  },
+  "required": ["namespace_config", "delta_layer_bytes", "version_refs", "capability_set", "schema_version", "created_at"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025). Replaces pre-ADR-0024 schema that was a Store-snapshot metadata file (block_count/ref_count); now matches spec.md §5.8 Snapshot type.",
+  "x-reel-spec-version": "2026-Q3"
+}

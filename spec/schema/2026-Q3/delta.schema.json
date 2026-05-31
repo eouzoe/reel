@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/delta.schema.json",
+  "title": "Delta",
+  "description": "Ordered mutations from a base Block per spec.md §5.4 + ADR-0025.",
+  "type": "object",
+  "properties": {
+    "base_hash": {
+      "$ref": "hash.schema.json",
+      "description": "The Block this Delta is anchored to."
+    },
+    "ops": {
+      "type": "array",
+      "description": "Mutations applied in insertion order.",
+      "items": {
+        "oneOf": [
+          {
+            "title": "Put",
+            "type": "object",
+            "properties": {
+              "kind": { "const": "put" },
+              "name": { "type": "string", "minLength": 1 },
+              "hash": { "$ref": "hash.schema.json" }
+            },
+            "required": ["kind", "name", "hash"],
+            "additionalProperties": false
+          },
+          {
+            "title": "Remove",
+            "type": "object",
+            "properties": {
+              "kind": { "const": "remove" },
+              "name": { "type": "string", "minLength": 1 }
+            },
+            "required": ["kind", "name"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": ["base_hash", "ops"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025). Op kinds may grow per-adapter; the protocol defines `put` and `remove` as the minimum required set.",
+  "x-reel-spec-version": "2026-Q3"
+}

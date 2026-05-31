@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/hash.schema.json",
+  "title": "Hash",
+  "description": "A BLAKE3-256 digest. Block identity constructor per spec.md §5.1 + ADR-0004.",
+  "type": "string",
+  "pattern": "^[0-9a-f]{64}$",
+  "minLength": 64,
+  "maxLength": 64,
+  "examples": [
+    "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+  ],
+  "x-reel-status": "v0.1 canonical (per ADR-0025)",
+  "x-reel-spec-version": "2026-Q3"
+}

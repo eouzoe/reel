@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/errors.schema.json",
+  "title": "Errors Manifest",
+  "description": "Schema for spec/errors.yaml. Each error has an ID, code (Rust enum variant), title, description, when-list, severity, exit code, and duvet anchor. ADR-0025 canonical set: E-001..E-010 minus E-004 (reserved).",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-Q[1-4]$"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^E-[0-9]{3}$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][a-zA-Z0-9]+$",
+            "description": "Rust enum variant name."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "when": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["recoverable", "critical"]
+          },
+          "exit_code": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 127
+          },
+          "duvet_anchor": {
+            "type": "string",
+            "pattern": "^spec/spec\\.md#e-[0-9]{3}$"
+          }
+        },
+        "required": ["id", "code", "title", "description", "when", "severity", "exit_code", "duvet_anchor"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["version", "errors"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025).",
+  "x-reel-spec-version": "2026-Q3"
+}

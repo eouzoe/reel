@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reel.strukto.ai/schema/2026-Q3/block.schema.json",
+  "title": "Block",
+  "description": "An immutable content-addressed unit. Identity by content per spec.md §5.2 + ADR-0025.",
+  "type": "object",
+  "properties": {
+    "hash": {
+      "$ref": "hash.schema.json",
+      "description": "BLAKE3-256 of (data + serialized provenance) per ADR-0004."
+    },
+    "data": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "maxLength": 16777216,
+      "description": "Up to MAX_BLOCK_SIZE (16 MiB) of opaque bytes, base64-encoded."
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "kernel_version": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "signer": {
+          "type": "string",
+          "description": "Optional Ed25519 public key (hex). Reserved for Portal Daemon integration (post-MVP).",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": ["kernel_version", "created_at"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["hash", "data", "provenance"],
+  "additionalProperties": false,
+  "x-reel-status": "v0.1 canonical (per ADR-0025)",
+  "x-reel-spec-version": "2026-Q3"
+}
