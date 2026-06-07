@@ -40,8 +40,6 @@ again for each feature. A system that routes work across many external
 resources can rebuild its state-and-effect layer on this one kernel instead of
 reasoning about transactionality resource by resource.
 
-This is the basis on which mirage is intended to be re-founded: reel as the
-core of the rebuild, not an accessory to it.
 
 ## What is built
 
