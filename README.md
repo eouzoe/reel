@@ -72,9 +72,6 @@ property-based tests over the kernel's invariants.
 - The effect-interception layer — capturing a process's outbound effects
   through a replaceable backend, so that classifying a new service is the only
   work a new integration requires.
-- Merging external plugins and modules onto that interface.
-- Refactoring individual mirage modules onto reel, and then re-founding mirage
-  as a whole upon it.
 
 ## Building
 
